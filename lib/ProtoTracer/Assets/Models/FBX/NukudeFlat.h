@@ -34,7 +34,10 @@ public:
         Blink,
         BiggerNose,
         MoveEye,
-        HideBlush
+        HideBlush,
+        HeartEye,
+        HeartAnchor,
+        HeartBlush
     };
 
 private:
@@ -45,7 +48,7 @@ private:
 	SimpleMaterial simpleMaterial = SimpleMaterial(RGBColor(128, 128, 128));
 	Object3D basisObj = Object3D(&triangleGroup, &triangleGroupMemory, &simpleMaterial);
 
-    static const byte morphCount = 26;
+    static const byte morphCount = 29;
     int FrownIndexes[4] = {16,17,18,19};
     int DoubtIndexes[41] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40};
     int SurprisedIndexes[41] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40};
@@ -72,6 +75,9 @@ private:
     int BiggerNoseIndexes[8] = {0,22,23,24,25,26,27,28};
     int MoveEyeIndexes[15] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     int HideBlushIndexes[12] = {41,42,43,44,45,46,47,48,49,50,51,52};
+    int HeartEyeIndexes[15] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    int HeartAnchorIndexes[1] = {53};
+    int HeartBlushIndexes[12] = {41,42,43,44,45,46,47,48,49,50,51,52};
 
     Vector3D FrownVectors[4] = {Vector3D(0.0000f,-19.4851f,-3.4480f),Vector3D(0.0000f,-23.5129f,-3.9973f),Vector3D(-0.6649f,-9.0778f,-2.1497f),Vector3D(0.0000f,-10.3950f,-2.5070f)};
     Vector3D DoubtVectors[41] = {Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-8.0583f,1.8777f),Vector3D(0.0000f,-4.7676f,1.4656f),Vector3D(0.0000f,-5.9648f,1.0459f),Vector3D(0.0000f,-11.2302f,5.8390f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-4.1523f,0.0000f),Vector3D(0.0000f,-7.4048f,1.4656f),Vector3D(0.0000f,-4.7676f,1.4656f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-8.3994f,1.7433f),Vector3D(-1.9359f,-17.3088f,8.4284f),Vector3D(0.0000f,-5.6169f,1.0455f),Vector3D(0.0000f,-17.6029f,6.1743f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(-5.6166f,2.6142f,3.9949f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f),Vector3D(0.0000f,-0.0517f,0.0000f)};
@@ -99,8 +105,11 @@ private:
     Vector3D BiggerNoseVectors[8] = {Vector3D(8.4117f,22.0785f,0.0000f),Vector3D(9.9468f,17.5824f,0.0000f),Vector3D(6.3111f,17.0042f,0.0000f),Vector3D(9.8417f,10.3621f,0.0000f),Vector3D(-1.1415f,23.0352f,0.0000f),Vector3D(-3.6689f,19.0258f,0.0000f),Vector3D(2.5732f,18.9604f,0.0000f),Vector3D(3.7327f,24.6146f,0.0000f)};
     Vector3D MoveEyeVectors[15] = {Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f),Vector3D(-6.2779f,4.9326f,0.0000f)};
     Vector3D HideBlushVectors[12] = {Vector3D(29.3262f,48.2032f,0.0000f),Vector3D(22.4307f,32.4422f,0.0000f),Vector3D(13.0726f,31.4571f,0.0000f),Vector3D(15.5353f,58.7927f,0.0000f),Vector3D(6.1772f,60.7628f,0.0000f),Vector3D(3.2220f,32.6885f,0.0000f),Vector3D(-11.5540f,36.3825f,0.0000f),Vector3D(1.0056f,61.9941f,0.0000f),Vector3D(-7.3674f,63.4717f,0.0000f),Vector3D(-20.4195f,40.0765f,0.0000f),Vector3D(-26.5762f,42.7854f,0.0000f),Vector3D(-24.8523f,61.7478f,0.0000f)};
+    Vector3D HeartEyeVectors[15] = {Vector3D(22.2788f,9.6434f,-4.7054f),Vector3D(-5.8203f,-12.7632f,11.1953f),Vector3D(-10.8280f,-48.2652f,12.3276f),Vector3D(4.6322f,4.6262f,11.6160f),Vector3D(19.9621f,8.4434f,-12.6014f),Vector3D(19.1081f,21.2550f,-9.7747f),Vector3D(4.0897f,-19.3330f,7.9292f),Vector3D(12.4811f,-10.5263f,0.3508f),Vector3D(-15.8643f,-13.8092f,15.2446f),Vector3D(-1.0212f,-33.4806f,4.9401f),Vector3D(6.7228f,2.0547f,14.0855f),Vector3D(6.4922f,-15.9699f,-1.5923f),Vector3D(20.2240f,-22.5044f,7.4113f),Vector3D(-29.8150f,-9.0446f,16.4947f),Vector3D(-3.0907f,-7.4060f,13.0962f)};
+    Vector3D HeartAnchorVectors[1] = {Vector3D(-78.2598f,10.5555f,41.2448f)};
+    Vector3D HeartBlushVectors[12] = {Vector3D(-10.1452f,-10.7747f,11.7531f),Vector3D(-24.4335f,-6.4276f,2.0592f),Vector3D(-27.2347f,-5.4578f,-0.0399f),Vector3D(-8.6336f,-10.9752f,12.4625f),Vector3D(-10.9753f,-10.1204f,10.6903f),Vector3D(-30.2442f,-4.3978f,-2.2698f),Vector3D(-33.5648f,-3.1589f,-4.8158f),Vector3D(-12.1773f,-9.6751f,9.7726f),Vector3D(-14.4570f,-8.8559f,8.0635f),Vector3D(-34.6030f,-2.6964f,-5.7049f),Vector3D(-35.2308f,-2.4026f,-6.2600f),Vector3D(-22.3219f,-6.2318f,2.4169f)};
 
-    Morph morphs[26] = {
+    Morph morphs[29] = {
         Morph(4, FrownIndexes, FrownVectors),
         Morph(41, DoubtIndexes, DoubtVectors),
         Morph(41, SurprisedIndexes, SurprisedVectors),
@@ -126,7 +135,10 @@ private:
         Morph(41, BlinkIndexes, BlinkVectors),
         Morph(8, BiggerNoseIndexes, BiggerNoseVectors),
         Morph(15, MoveEyeIndexes, MoveEyeVectors),
-        Morph(12, HideBlushIndexes, HideBlushVectors)
+        Morph(12, HideBlushIndexes, HideBlushVectors),
+        Morph(15, HeartEyeIndexes, HeartEyeVectors),
+        Morph(1, HeartAnchorIndexes, HeartAnchorVectors),
+        Morph(12, HeartBlushIndexes, HeartBlushVectors)
     };
 
 public:

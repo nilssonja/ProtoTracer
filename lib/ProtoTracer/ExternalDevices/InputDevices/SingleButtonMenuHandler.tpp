@@ -30,8 +30,48 @@ bool MenuHandler<menuCount>::previousState;
 template <uint8_t menuCount>
 void MenuHandler<menuCount>::UpdateState() {
     long currentTime = millis();
-    bool pinState = digitalRead(pin);
     long timeOn = 0;
+
+#ifdef WIRELESSBUTTON
+    // An RF receiver output replaces the button: high while the fob button is held, low otherwise.
+    static long lastActive = 0;
+    static long candidateStart = 0;
+    static long pressStart = 0;
+    static bool pressed = false;
+    static bool ignored = false;
+
+    bool raw = digitalRead(pin);
+
+    if (raw) lastActive = currentTime;
+
+    if (!pressed) {
+        // Radio noise can flick the output high for an instant; a real press stays high.
+        if (!raw) candidateStart = currentTime;
+        else if (currentTime - candidateStart >= wirelessMinPressTime) {
+            pressed = true;
+            pressStart = candidateStart;
+        }
+    } else if (currentTime - lastActive >= wirelessDropoutTime) {
+        // A weak signal can drop out for a few ms mid-hold, so only a sustained gap ends the press.
+        pressed = false;
+        candidateStart = currentTime;
+    }
+
+    // A line that never goes low is an unplugged receiver (the board pulls the pin up), not a very long press.
+    if (pressed && currentTime - pressStart > wirelessStuckTime) ignored = true;
+
+    if (ignored) {
+        if (!pressed) ignored = false;
+
+        previousState = false;
+        previousMillisHold = currentTime;
+        return;
+    }
+
+    bool pinState = !pressed;
+#else
+    bool pinState = digitalRead(pin);
+#endif
 
     if (pinState && !previousState) {  // Pin not pressed, not triggered -> reset time
         previousMillisHold = currentTime;
@@ -79,7 +119,11 @@ bool MenuHandler<menuCount>::Initialize(uint8_t pin, uint16_t holdingTime) {
 
     MenuHandler::previousState = false;
 
+#ifdef WIRELESSBUTTON
+    pinMode(pin, INPUT_PULLDOWN);
+#else
     pinMode(pin, INPUT_PULLUP);
+#endif
 
     MenuHandler::pin = pin;
     MenuHandler::holdingTime = holdingTime;

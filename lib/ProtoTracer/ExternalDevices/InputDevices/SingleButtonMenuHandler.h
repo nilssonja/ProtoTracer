@@ -39,6 +39,10 @@ private:
     static bool holdingState; ///< Indicates whether the button is in a holding state.
     static bool previousState; ///< Tracks the previous state of the button.
 
+    static const long wirelessMinPressTime = 30; ///< WIRELESSBUTTON: the output must stay high this long (ms) to count as a press.
+    static const long wirelessDropoutTime = 80; ///< WIRELESSBUTTON: gaps shorter than this (ms) don't end a press.
+    static const long wirelessStuckTime = 10000; ///< WIRELESSBUTTON: a press longer than this (ms) is ignored as a fault.
+
     /**
      * @brief Updates the button state and menu navigation.
      */

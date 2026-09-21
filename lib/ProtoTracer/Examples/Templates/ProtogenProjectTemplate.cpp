@@ -94,8 +94,11 @@ void ProtogenProject::UpdateFace(float ratio) {
     yOffset = fGenMatYMove.Update();
     
     if (Menu::UseBoopSensor()) {
-        isBooped = boop60.isBooped();
-        isBooped = boop99.isBooped();
+        //Only one of the two sensors is ever fitted (they share address 0x39); the absent one always reads false.
+        bool booped60 = boop60.isBooped();
+        bool booped99 = boop99.isBooped();
+
+        isBooped = booped60 || booped99;
     }
 
     hud.SetEffect(Menu::GetEffect());// Pull Effect from menu and store reference in hud for observing data

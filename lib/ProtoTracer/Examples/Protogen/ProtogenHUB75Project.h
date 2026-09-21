@@ -14,7 +14,7 @@ private:
     NukudeFace pM;
     DeltaDisplayBackground deltaDisplayBackground;
     
-	const __FlashStringHelper* faceArray[10] = {F("DEFAULT"), F("ANGRY"), F("DOUBT"), F("FROWN"), F("LOOKUP"), F("SAD"), F("AUDIO1"), F("AUDIO2"), F("AUDIO3")};
+	const __FlashStringHelper* faceArray[11] = {F("DEFAULT"), F("ANGRY"), F("DOUBT"), F("FROWN"), F("LOOKUP"), F("SAD"), F("HEART"), F("HEART2"), F("AUDIO1"), F("AUDIO2"), F("AUDIO3")};
 
     void LinkControlParameters() override {//Called from parent
         AddParameter(NukudeFace::Anger, pM.GetMorphWeightReference(NukudeFace::Anger), 15);
@@ -24,6 +24,7 @@ private:
         AddParameter(NukudeFace::Frown, pM.GetMorphWeightReference(NukudeFace::Frown), 15);
         AddParameter(NukudeFace::LookUp, pM.GetMorphWeightReference(NukudeFace::LookUp), 15);
         AddParameter(NukudeFace::LookDown, pM.GetMorphWeightReference(NukudeFace::LookDown), 15);
+        AddParameter(NukudeFace::HeartEye, pM.GetMorphWeightReference(NukudeFace::HeartEye), 20, IEasyEaseAnimator::InterpolationMethod::Cosine);
 
         AddParameter(NukudeFace::HideBlush, pM.GetMorphWeightReference(NukudeFace::HideBlush), 15, IEasyEaseAnimator::InterpolationMethod::Cosine, true);
 
@@ -73,6 +74,18 @@ private:
         AddParameterFrame(NukudeFace::LookDown, 1.0f);
     }
 
+    void Heart(){
+        //Blink shares the eye vertices, so it has to stay parked while the heart is shaped.
+        DisableBlinking();
+
+        AddParameterFrame(NukudeFace::HeartEye, 1.0f);
+    }
+
+    void HeartBlush(){
+        Heart();
+        AddParameterFrame(NukudeFace::HideBlush, 0.0f);
+    }
+
     void SpectrumAnalyzerCallback() override {
         AddMaterialFrame(Color::CHORIZONTALRAINBOW, 0.8f);
     }
@@ -86,7 +99,7 @@ private:
     }
 
 public:
-    ProtogenHUB75Project() : ProtogenProject(&cameras, &controller, 2, Vector2D(), Vector2D(192.0f, 94.0f), 22, 23, 9){
+    ProtogenHUB75Project() : ProtogenProject(&cameras, &controller, 2, Vector2D(), Vector2D(192.0f, 94.0f), 22, 23, 11){
         scene.AddObject(pM.GetObject());
         scene.AddObject(deltaDisplayBackground.GetObject());
 
@@ -120,6 +133,15 @@ public:
 
         UpdateFace(ratio);
 
+        //The heart pulls the eye off the outer edge of the fit box; the anchor holds that edge for the whole
+        //transition so AlignObjectFace doesn't restretch the rest of the face. Not eased on purpose.
+        float heartWeight = *pM.GetMorphWeightReference(NukudeFace::HeartEye);
+        pM.SetMorphWeight(NukudeFace::HeartAnchor, heartWeight > 0.001f ? 1.0f : 0.0f);
+
+        //The stock blush sits where the heart's flank is, so it slides outboard as the heart forms. Scaled by
+        //blush visibility so the hidden (collapsed) blush points never disturb the plain heart face.
+        pM.SetMorphWeight(NukudeFace::HeartBlush, heartWeight * (1.0f - *pM.GetMorphWeightReference(NukudeFace::HideBlush)));
+
         pM.Update();
 
         AlignObjectFace(pM.GetObject(), -7.5f);
@@ -129,7 +151,11 @@ public:
     }
 
     void SelectFace(uint8_t code) {
-        if (IsBooped() && code != 6) {
+        EnableBlinking();//Heart() turns this back off for itself
+
+        bool heartFace = code == 6 || code == 7;
+
+        if (IsBooped() && !heartFace && code != 8) {
             Surprised();
             return;
         }
@@ -141,14 +167,22 @@ public:
             case 3: Frown();    break;
             case 4: LookUp();   break;
             case 5: Sad();      break;
-            case 6: AudioReactiveGradientFace();    break;
-            case 7: OscilloscopeFace();             break;
+            case 6: Heart();        break;
+            case 7: HeartBlush();   break;
+            case 8: AudioReactiveGradientFace();    break;
+            case 9: OscilloscopeFace();             break;
             default: SpectrumAnalyzerFace();        break;
         }
+
+        if (IsBooped() && heartFace) AddMaterialFrame(Color::CRAINBOW);//Booped hearts stay hearts
     }
 
     void SelectFaceFromMorse(uint8_t code) {
-        if (IsBooped() && code != 24) {
+        EnableBlinking();//Heart() turns this back off for itself
+
+        bool heartFace = code == 11 || code == 12;
+
+        if (IsBooped() && !heartFace && code != 24) {
             Surprised();
             return;
         }
@@ -158,6 +192,8 @@ public:
             case 2: Surprised();    break; // [B]lush
             case 4: Doubt();        break; // [D]oubt
             case 6: Frown();        break; // [F]rown
+            case 11: HeartBlush();  break; // [K]iss
+            case 12: Heart();       break; // [L]ove
             case 19: Sad();         break; // [S]ad
             case 21: LookUp();      break; // Look [U]p
             case 22: LookDown();    break; // Look [V] Down
@@ -166,5 +202,7 @@ public:
             case 26: SpectrumAnalyzerFace();        break; // [Z] Spectrum
             default: Default();     break; // [H] Happy
         }
+
+        if (IsBooped() && heartFace) AddMaterialFrame(Color::CRAINBOW);//Booped hearts stay hearts
     }
 };

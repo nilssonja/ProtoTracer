@@ -60,3 +60,17 @@
 #if DOXYGEN
 #define MORSEBUTTON
 #endif
+
+/**
+ * @def WIRELESSBUTTON
+ * @brief Define this macro when an RF keyfob receiver is plugged into the button port instead of a button.
+ *
+ * The receiver output is active-high (a button pulls the pin low), so the polarity is flipped, brief radio
+ * dropouts are filtered, and a permanently high line (receiver unplugged) is ignored. Menu behaviour is
+ * unchanged: short press steps the value, hold moves to the next menu. The receiver must be powered from
+ * 3.3V. Not used with NEOTRELLISMENU or MORSEBUTTON.
+ */
+#define WIRELESSBUTTON
+#if DOXYGEN
+#define WIRELESSBUTTON
+#endif

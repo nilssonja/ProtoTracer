@@ -32,6 +32,7 @@
 #include "../../Animation/AnimationTracks/BlinkTrack.h"
 #include "../../Utils/Signals/FunctionGenerator.h"
 #include "../../ExternalDevices/Sensors/Microphone/Utils/FFTVoiceDetection.h"
+#include "../../ExternalDevices/Sensors/Microphone/Utils/VoiceGate.h"
 #include "../../Scene/Objects/ObjectAlign.h"
 
 #include "../../Utils/Time/TimeStep.h"
@@ -162,6 +163,23 @@ private:
      * @brief Voice detection system based on FFT data.
      */
     FFTVoiceDetection<128> voiceDetection;
+
+    /**
+     * @brief Noise gate deciding when the wearer is speaking, and how loudly relative to their normal level.
+     */
+    VoiceGate voiceGate;
+
+    /**
+     * @brief Mouth movement state. The visemes are written straight to their morph weights rather than
+     *        through the animator, whose frame ramp steps too coarsely to carry a blend or a loudness.
+     */
+    static const uint8_t visemeSlots = Viseme::SS + 1; ///< One slot per Viseme::MouthShape.
+    float* visemeParameters[visemeSlots] = {}; ///< Morph weight driven by each viseme, null if unused.
+    float visemeWeights[visemeSlots] = {};     ///< Per-frame smoothed weight of each vowel viseme.
+    float mouthEnvelope = 0.0f;                ///< Per-frame smoothed loudness, opens fast and closes slowly.
+    float mouthGain = 1.5f;                    ///< Scale on the vowel shapes, above 1.0 exaggerates them as the morphs are not clamped.
+    uint32_t lastMicUpdate = 0;                ///< Microphone window count at the last gate update.
+    unsigned long lastVisemeMicros = 0;        ///< Time of the last viseme update, for frame rate independent easing.
 
     /**
      * @brief Facial offset parameters for layering advanced materials (e.g., Spectrum Analyzer).
@@ -447,6 +465,12 @@ protected:
     void AddParameter(uint8_t index, float* parameter, uint16_t transitionFrames, 
                       IEasyEaseAnimator::InterpolationMethod interpolationMethod = IEasyEaseAnimator::InterpolationMethod::Overshoot, 
                       bool invertDirection = false);
+
+    /**
+     * @brief Sets how pronounced the vowel mouth shapes are.
+     * @param gain 1.0 shows each morph at its modelled extent, higher values exaggerate it. Default 1.5.
+     */
+    void SetMouthGain(float gain);
 
     /**
      * @brief Adds a viseme parameter to the animator (for mouth shapes).

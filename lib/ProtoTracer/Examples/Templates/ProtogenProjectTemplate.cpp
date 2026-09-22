@@ -50,20 +50,67 @@ void ProtogenProject::UpdateKeyFrameTracks(){
 }
 
 void ProtogenProject::UpdateFFTVisemes(){
-    if(Menu::UseMicrophone()){
-        eEA.AddParameterFrame(Viseme::SS + 100, MicrophoneFourier::GetCurrentMagnitude() / 2.0f);
+    const Viseme::MouthShape vowels[] = {Viseme::EE, Viseme::AE, Viseme::UH, Viseme::AR, Viseme::ER, Viseme::AH, Viseme::OO};
+    bool useMicrophone = Menu::UseMicrophone();
 
-        if(MicrophoneFourier::GetCurrentMagnitude() > 0.05f){
-            voiceDetection.Update(MicrophoneFourier::GetFourierFiltered(), MicrophoneFourier::GetSampleRate());
-    
-            eEA.AddParameterFrame(Viseme::EE + 100, voiceDetection.GetViseme(Viseme::EE));
-            eEA.AddParameterFrame(Viseme::AH + 100, voiceDetection.GetViseme(Viseme::AH));
-            eEA.AddParameterFrame(Viseme::UH + 100, voiceDetection.GetViseme(Viseme::UH));
-            eEA.AddParameterFrame(Viseme::AR + 100, voiceDetection.GetViseme(Viseme::AR));
-            eEA.AddParameterFrame(Viseme::ER + 100, voiceDetection.GetViseme(Viseme::ER));
-            eEA.AddParameterFrame(Viseme::OO + 100, voiceDetection.GetViseme(Viseme::OO));
+    if(useMicrophone && MicrophoneFourier::GetUpdateCount() != lastMicUpdate){//a sample window outlasts a frame, only classify new data
+        lastMicUpdate = MicrophoneFourier::GetUpdateCount();
+
+        voiceGate.SetSensitivity(float(Menu::GetMicLevel()) / 10.0f);
+        voiceGate.Update(MicrophoneFourier::GetLevelDB(), MicrophoneFourier::GetSpeechBandRatio());
+
+        //the unfiltered spectrum, the filtered one adapts to a held vowel and fades it out
+        if(voiceGate.IsOpen()){
+            voiceDetection.Update(MicrophoneFourier::GetFourier(), MicrophoneFourier::GetSampleRate());
+        }
+        else{
+            voiceDetection.UpdateNoiseFloor(MicrophoneFourier::GetFourier());
+            voiceDetection.ResetVisemes();
+        }
+
+        #ifdef MICDEBUG
+        if(lastMicUpdate % 4 == 0){
+            Serial.print("MIC level ");       Serial.print(MicrophoneFourier::GetLevelDB(), 1);
+            Serial.print("dB, peak ");        Serial.print(MicrophoneFourier::GetPeakLevel() * 100.0f, 0);
+            Serial.print("%, floor ");        Serial.print(voiceGate.GetNoiseFloorDB(), 1);
+            Serial.print("dB, opens at ");    Serial.print(voiceGate.GetOpenThresholdDB(), 1);
+            Serial.print("dB, speaking ");    Serial.print(voiceGate.GetSpeakingLevelDB(), 1);
+            Serial.print("dB, speech band "); Serial.print(MicrophoneFourier::GetSpeechBandRatio(), 2);
+            Serial.print(voiceGate.IsOpen() ? ", OPEN " : ", closed ");
+            Serial.print(voiceGate.GetEnvelope(), 2);
+            Serial.print(", F1 ");            Serial.print(voiceDetection.GetF1(), 0);
+            Serial.print(", F2 ");            Serial.print(voiceDetection.GetF2(), 0);
+            Serial.print(", ");               Serial.println(voiceDetection.GetDominantVisemeName());
+        }
+        #endif
+    }
+
+    unsigned long now = micros();
+    float dT = Mathematics::Constrain(float(now - lastVisemeMicros) / 1000000.0f, 0.0f, 0.1f);
+    lastVisemeMicros = now;
+
+    //a mouth opens faster than it closes
+    float envelopeTarget = useMicrophone ? voiceGate.GetEnvelope() : 0.0f;
+    mouthEnvelope += (envelopeTarget - mouthEnvelope) * (1.0f - expf(-dT / (envelopeTarget > mouthEnvelope ? 0.03f : 0.12f)));
+
+    for(uint8_t i = 0; i < visemeSlots; i++){//visemes may share a morph, so clear before accumulating
+        if(visemeParameters[i]) *visemeParameters[i] = 0.0f;
+    }
+
+    float shaped = 0.0f;//share of the mouth given a vowel shape that has a morph to show it
+
+    for(Viseme::MouthShape vowel : vowels){
+        //only follow the detection while speaking, so the mouth keeps its last shape as it closes
+        if(useMicrophone && voiceGate.IsOpen()) visemeWeights[vowel] += (voiceDetection.GetViseme(vowel) - visemeWeights[vowel]) * (1.0f - expf(-dT / 0.04f));
+
+        if(visemeParameters[vowel]){
+            *visemeParameters[vowel] += visemeWeights[vowel] * mouthEnvelope * mouthGain;
+            shaped += visemeWeights[vowel];
         }
     }
+
+    //the rest opens the mouth without a vowel shape, so the total never exceeds the loudness
+    if(visemeParameters[Viseme::SS]) *visemeParameters[Viseme::SS] += (1.0f - Mathematics::Constrain(shaped, 0.0f, 1.0f)) * mouthEnvelope * 0.5f;
 }
 
 void ProtogenProject::SetMaterialColor(){
@@ -105,7 +152,6 @@ void ProtogenProject::UpdateFace(float ratio) {
     hud.Update();
     this->scene.SetEffect(&hud);// Use HUD as effect for overlay/data extraction
 
-    voiceDetection.SetThreshold(map(Menu::GetMicLevel(), 0, 10, 1000, 50));
     UpdateFFTVisemes();
 
     MicrophoneFourier::Update();
@@ -323,10 +369,12 @@ void ProtogenProject::AddParameter(uint8_t index, float* parameter, uint16_t tra
     eEA.SetInterpolationMethod(index, interpolationMethod);
 }
 
-void ProtogenProject::AddViseme(Viseme::MouthShape visemeName, float* parameter){
-    eEA.AddParameter(parameter, visemeName + 100, 2, 0.0f, 1.0f);
+void ProtogenProject::SetMouthGain(float gain){
+    mouthGain = gain;
+}
 
-    eEA.SetInterpolationMethod(visemeName + 100, IEasyEaseAnimator::Linear);
+void ProtogenProject::AddViseme(Viseme::MouthShape visemeName, float* parameter){
+    visemeParameters[visemeName] = parameter;
 }
 
 void ProtogenProject::AddBlinkParameter(float* blinkParameter){

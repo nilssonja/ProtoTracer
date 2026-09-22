@@ -28,40 +28,26 @@ void PeakDetection<sampleSize>::GetStdDev(uint8_t start, uint8_t length, float* 
 
 template <size_t sampleSize>
 void PeakDetection<sampleSize>::Calculate(float* data, bool* peaks) {
-    float average = 0.0f;
-    float stdDev = 0.0f;
     float maxData = 0.0f;
 
     for (uint8_t i = 0; i < sampleSize; i++) {
-        filData[i] = 0.0f;
+        filData[i] = data[i];
         avg[i] = 0.0f;
         std[i] = 0.0f;
+        peaks[i] = false;
         maxData = Mathematics::Max(maxData, data[i]);
     }
 
-    if (maxData > threshold) {
-        GetStdDev(0, lag, data, average, stdDev);
+    if (maxData <= threshold) return;
 
-        avg[lag - 1] = average;
-        std[lag - 1] = stdDev;
+    GetStdDev(0, lag, filData, avg[lag - 1], std[lag - 1]);
 
-        for (uint8_t i = lag; i < sampleSize - lag; i++) {
-            if (fabs(data[i] - avg[i - 1]) > threshold * std[i - 1]) {
-                if (data[i] > avg[i - 1]) peaks[i] = true;
-                filData[i] = influence * data[i] + (1.0f - influence) * filData[i - 1];
-            } else {
-                peaks[i] = false;
-                filData[i] = data[i];
-            }
-
-            GetStdDev(i - lag + 1, i, data, avg[i], std[i]);
-
-            avg[i] = average;
-            std[i] = stdDev;
+    for (uint8_t i = lag; i < sampleSize; i++) {
+        if (fabs(data[i] - avg[i - 1]) > threshold * std[i - 1]) {
+            peaks[i] = data[i] > avg[i - 1];
+            filData[i] = influence * data[i] + (1.0f - influence) * filData[i - 1];
         }
-    } else {
-        for (uint8_t i = 0; i < sampleSize; i++) {
-            peaks[i] = false;
-        }
+
+        GetStdDev(i - lag + 1, lag, filData, avg[i], std[i]);// trailing window of the influence-filtered data
     }
 }

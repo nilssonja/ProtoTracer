@@ -25,9 +25,21 @@
  * @def PRINTINFO
  * @brief Define this macro to enable printing live stats, such as FPS and other information.
  */
-#define PRINTINFO
+// #define PRINTINFO
 #if DOXYGEN
 #define PRINTINFO
+#endif
+
+/**
+ * @def MICDEBUG
+ * @brief Define this macro to print the microphone level, voice gate state and detected formants.
+ *
+ * Used to set the microphone gain and to calibrate the viseme coordinates in FFTVoiceDetection.h.
+ * Easier to read with PRINTINFO disabled.
+ */
+#define MICDEBUG
+#if DOXYGEN
+#define MICDEBUG
 #endif
 
 /**

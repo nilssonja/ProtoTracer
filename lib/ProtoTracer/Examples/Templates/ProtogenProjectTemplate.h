@@ -176,6 +176,7 @@ private:
     static const uint8_t visemeSlots = Viseme::SS + 1; ///< One slot per Viseme::MouthShape.
     float* visemeParameters[visemeSlots] = {}; ///< Morph weight driven by each viseme, null if unused.
     float visemeWeights[visemeSlots] = {};     ///< Per-frame smoothed weight of each vowel viseme.
+    float visemeJaw[visemeSlots] = {};         ///< How much of the loudness jaw (the SS morph) each vowel brings with it.
     float mouthEnvelope = 0.0f;                ///< Per-frame smoothed loudness, opens fast and closes slowly.
     float mouthGain = 1.5f;                    ///< Scale on the vowel shapes, above 1.0 exaggerates them as the morphs are not clamped.
     uint32_t lastMicUpdate = 0;                ///< Microphone window count at the last gate update.
@@ -476,8 +477,10 @@ protected:
      * @brief Adds a viseme parameter to the animator (for mouth shapes).
      * @param visemeName The mouth shape (e.g., Viseme::EE, Viseme::AH, etc.).
      * @param parameter Pointer to the float parameter controlling that viseme.
+     * @param jaw How much of the loudness jaw (the SS morph) to add with this vowel, 0.0 to 1.0. Use 1.0 for
+     *            subtle morphs that only shape the lips, 0.0 for morphs that already open the mouth themselves.
      */
-    void AddViseme(Viseme::MouthShape visemeName, float* parameter);
+    void AddViseme(Viseme::MouthShape visemeName, float* parameter, float jaw = 0.0f);
 
     /**
      * @brief Adds a float parameter to the blink track for controlling blinking.

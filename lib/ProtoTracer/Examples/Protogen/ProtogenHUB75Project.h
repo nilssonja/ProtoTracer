@@ -28,10 +28,11 @@ private:
 
         AddParameter(NukudeFace::HideBlush, pM.GetMorphWeightReference(NukudeFace::HideBlush), 15, IEasyEaseAnimator::InterpolationMethod::Cosine, true);
 
-        AddViseme(Viseme::MouthShape::EE, pM.GetMorphWeightReference(NukudeFace::vrc_v_ee));
-        AddViseme(Viseme::MouthShape::AH, pM.GetMorphWeightReference(NukudeFace::vrc_v_aa));
-        AddViseme(Viseme::MouthShape::AE, pM.GetMorphWeightReference(NukudeFace::vrc_v_ih));
-        AddViseme(Viseme::MouthShape::UH, pM.GetMorphWeightReference(NukudeFace::vrc_v_dd));
+        //the ee, aa, ih and dd morphs only shape the lips, so they bring the loudness jaw with them; oh, ou and ch open the mouth themselves
+        AddViseme(Viseme::MouthShape::EE, pM.GetMorphWeightReference(NukudeFace::vrc_v_ee), 1.0f);
+        AddViseme(Viseme::MouthShape::AH, pM.GetMorphWeightReference(NukudeFace::vrc_v_aa), 1.0f);
+        AddViseme(Viseme::MouthShape::AE, pM.GetMorphWeightReference(NukudeFace::vrc_v_ih), 1.0f);
+        AddViseme(Viseme::MouthShape::UH, pM.GetMorphWeightReference(NukudeFace::vrc_v_dd), 1.0f);
         AddViseme(Viseme::MouthShape::AR, pM.GetMorphWeightReference(NukudeFace::vrc_v_oh));//"or" and "oh" both land here, the open rounded shape
         AddViseme(Viseme::MouthShape::ER, pM.GetMorphWeightReference(NukudeFace::vrc_v_ch));
         AddViseme(Viseme::MouthShape::OO, pM.GetMorphWeightReference(NukudeFace::vrc_v_ou));//"too", the tighter rounded shape

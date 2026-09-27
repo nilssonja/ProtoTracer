@@ -98,6 +98,7 @@ void ProtogenProject::UpdateFFTVisemes(){
     }
 
     float shaped = 0.0f;//share of the mouth given a vowel shape that has a morph to show it
+    float jaw = 0.0f;//share of the mouth whose vowel shape wants the loudness jaw under it
 
     for(Viseme::MouthShape vowel : vowels){
         //only follow the detection while speaking, so the mouth keeps its last shape as it closes
@@ -106,11 +107,14 @@ void ProtogenProject::UpdateFFTVisemes(){
         if(visemeParameters[vowel]){
             *visemeParameters[vowel] += visemeWeights[vowel] * mouthEnvelope * mouthGain;
             shaped += visemeWeights[vowel];
+            jaw += visemeWeights[vowel] * visemeJaw[vowel];
         }
     }
 
-    //the rest opens the mouth without a vowel shape, so the total never exceeds the loudness
-    if(visemeParameters[Viseme::SS]) *visemeParameters[Viseme::SS] += (1.0f - Mathematics::Constrain(shaped, 0.0f, 1.0f)) * mouthEnvelope * 0.5f;
+    //unshaped loudness opens the mouth on its own, and the lip-only vowels ask for the same jaw under them
+    jaw += 1.0f - Mathematics::Constrain(shaped, 0.0f, 1.0f);
+
+    if(visemeParameters[Viseme::SS]) *visemeParameters[Viseme::SS] += Mathematics::Constrain(jaw, 0.0f, 1.0f) * mouthEnvelope * 0.5f;
 }
 
 void ProtogenProject::SetMaterialColor(){
@@ -373,8 +377,9 @@ void ProtogenProject::SetMouthGain(float gain){
     mouthGain = gain;
 }
 
-void ProtogenProject::AddViseme(Viseme::MouthShape visemeName, float* parameter){
+void ProtogenProject::AddViseme(Viseme::MouthShape visemeName, float* parameter, float jaw){
     visemeParameters[visemeName] = parameter;
+    visemeJaw[visemeName] = jaw;
 }
 
 void ProtogenProject::AddBlinkParameter(float* blinkParameter){

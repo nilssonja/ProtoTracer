@@ -15,6 +15,8 @@
 #include "../../Utils/Math/Quaternion.h"
 #include "../../Utils/Math/Vector3D.h"
 
+class Material;
+
 /**
  * @class Triangle3D
  * @brief Represents a 3D triangle with support for UV mapping and ray intersection testing.
@@ -34,6 +36,7 @@ public:
     Vector3D normal; ///< Normal vector of the triangle.
 
     bool hasUV = false; ///< Indicates whether the triangle has UV mapping.
+    Material* material = nullptr; ///< Optional override; when set, the rasterizer uses it instead of the owning object's material.
 
     /**
      * @brief Default constructor.

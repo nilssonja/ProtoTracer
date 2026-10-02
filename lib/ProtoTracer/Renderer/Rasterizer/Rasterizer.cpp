@@ -194,7 +194,10 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
             if (scene->GetObjects()[i]->IsEnabled()) {
                 for (uint16_t j = 0; j < scene->GetObjects()[i]->GetTriangleGroup()->GetTriangleCount(); ++j) {
                     //Create 2D triangle mapping for rasterize, stores 3D coordinates for mapping material to 3d global coordinate space
-                    triangles[iterCount] = Triangle2D(camera->GetLookOffset(), camera->GetTransform(), &scene->GetObjects()[i]->GetTriangleGroup()->GetTriangles()[j], scene->GetObjects()[i]->GetMaterial());
+                    Triangle3D* t = &scene->GetObjects()[i]->GetTriangleGroup()->GetTriangles()[j];
+                    Material* material = t->material ? t->material : scene->GetObjects()[i]->GetMaterial();//per-triangle override (e.g. coloured blush) beats the object's material
+
+                    triangles[iterCount] = Triangle2D(camera->GetLookOffset(), camera->GetTransform(), t, material);
                     
                     tree.Insert(&triangles[iterCount]);
                     iterCount++;

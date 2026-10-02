@@ -145,11 +145,31 @@ private:
         Morph(15, BedroomEyeIndexes, BedroomEyeVectors)
     };
 
+    bool IsBlushVertex(unsigned int index){
+        for(int v = 0; v < 12; v++){
+            if(HideBlushIndexes[v] == (int)index) return true;
+        }
+
+        return false;
+    }
+
 public:
     NukudeFace(){}
 
     Object3D* GetObject(){
         return &basisObj;
+    }
+
+    //Gives the blush triangles (every vertex in the HideBlush set) their own material so they can be coloured
+    //independently of the face. Pass nullptr to fall back to the object's material.
+    void SetBlushMaterial(Material* material){
+        for(int t = 0; t < 44; t++){
+            const IndexGroup& tri = basisIndexes[t];
+
+            if(IsBlushVertex(tri.A) && IsBlushVertex(tri.B) && IsBlushVertex(tri.C)){
+                triangleGroupMemory.GetTriangles()[t].material = material;
+            }
+        }
     }
 
     void SetMorphWeight(Morphs morph, float weight){

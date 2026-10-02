@@ -13,11 +13,12 @@ private:
     HUB75Controller controller = HUB75Controller(&cameras, 50, 50);
     NukudeFace pM;
     DeltaDisplayBackground deltaDisplayBackground;
+    SimpleMaterial blushMaterial = SimpleMaterial(RGBColor(255, 48, 96));//pinkish-red, independent of the face colour
     
 	//Codes 0..faceCycleCount-1 are what a short press cycles through; the rest stay in SelectFace but are
 	//only reachable by raising faceCycleCount (or Menu::SetFaceState).
-	static const uint8_t faceCycleCount = 8;
-	const __FlashStringHelper* faceArray[13] = {F("DEFAULT"), F("HEART"), F("HEART2"), F("BEDROOM"), F("BEDROOM2"), F("AUDIO1"), F("AUDIO2"), F("AUDIO3"), F("ANGRY"), F("DOUBT"), F("FROWN"), F("LOOKUP"), F("SAD")};
+	static const uint8_t faceCycleCount = 5;
+	const __FlashStringHelper* faceArray[13] = {F("DEFAULT"), F("HEART"), F("HEART2"), F("BEDROOM"), F("BEDROOM2"), F("ANGRY"), F("DOUBT"), F("FROWN"), F("LOOKUP"), F("SAD"), F("AUDIO1"), F("AUDIO2"), F("AUDIO3")};
 
     void LinkControlParameters() override {//Called from parent
         AddParameter(NukudeFace::Anger, pM.GetMorphWeightReference(NukudeFace::Anger), 15);
@@ -151,6 +152,9 @@ public:
         SelectFace(mode);
 #endif
 
+        //Blush is pink on its own, but joins the face's rainbow while booped.
+        pM.SetBlushMaterial(IsBooped() ? nullptr : &blushMaterial);
+
         UpdateFace(ratio);
 
         //The heart pulls the eye off the outer edge of the fit box; the anchor holds that edge for the whole
@@ -175,7 +179,7 @@ public:
 
         bool heartFace = code == 1 || code == 2;
 
-        if (IsBooped() && !heartFace && code != 5) {//5 = audio-reactive gradient, which has no face to replace
+        if (IsBooped() && !heartFace && code != 10) {//10 = audio-reactive gradient, which has no face to replace
             Surprised();
             return;
         }
@@ -187,15 +191,15 @@ public:
             case 2: HeartBlush();   break;
             case 3: Bedroom();      break;
             case 4: BedroomBlush(); break;
-            case 5: AudioReactiveGradientFace();    break;
-            case 6: OscilloscopeFace();             break;
-            case 7: SpectrumAnalyzerFace();         break;
             //Kept but out of the cycle (see faceCycleCount)
-            case 8: Angry();    break;
-            case 9: Doubt();    break;
-            case 10: Frown();   break;
-            case 11: LookUp();  break;
-            case 12: Sad();     break;
+            case 5: Angry();    break;
+            case 6: Doubt();    break;
+            case 7: Frown();    break;
+            case 8: LookUp();   break;
+            case 9: Sad();      break;
+            case 10: AudioReactiveGradientFace();   break;
+            case 11: OscilloscopeFace();            break;
+            case 12: SpectrumAnalyzerFace();        break;
             default: Default(); break;
         }
 

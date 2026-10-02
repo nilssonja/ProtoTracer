@@ -45,7 +45,7 @@ private:
     static const uint8_t litThreshold = 24; ///< Brightest channel must exceed this (of 255) to light an OLED pixel.
 
     Effect* subEffect = nullptr; ///< Used to capture the complete rendered frame
-    TimeStep timeStep = TimeStep(15); ///< Limits the display to update 15 times per second
+    TimeStep timeStep = TimeStep(5); ///< Limits the display to update 5 times per second; each push blocks the render loop ~25 ms
     bool didBegin = false; ///< True if the I2C interface started correctly
     bool splashFinished = false; ///< True when the splash startup screen is finished
     bool mirrorX = false; ///< Flip the mirrored image horizontally

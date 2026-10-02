@@ -14,7 +14,10 @@ private:
     NukudeFace pM;
     DeltaDisplayBackground deltaDisplayBackground;
     
-	const __FlashStringHelper* faceArray[11] = {F("DEFAULT"), F("ANGRY"), F("DOUBT"), F("FROWN"), F("LOOKUP"), F("SAD"), F("HEART"), F("HEART2"), F("AUDIO1"), F("AUDIO2"), F("AUDIO3")};
+	//Codes 0..faceCycleCount-1 are what a short press cycles through; the rest stay in SelectFace but are
+	//only reachable by raising faceCycleCount (or Menu::SetFaceState).
+	static const uint8_t faceCycleCount = 8;
+	const __FlashStringHelper* faceArray[13] = {F("DEFAULT"), F("HEART"), F("HEART2"), F("BEDROOM"), F("BEDROOM2"), F("AUDIO1"), F("AUDIO2"), F("AUDIO3"), F("ANGRY"), F("DOUBT"), F("FROWN"), F("LOOKUP"), F("SAD")};
 
     void LinkControlParameters() override {//Called from parent
         AddParameter(NukudeFace::Anger, pM.GetMorphWeightReference(NukudeFace::Anger), 15);
@@ -25,6 +28,7 @@ private:
         AddParameter(NukudeFace::LookUp, pM.GetMorphWeightReference(NukudeFace::LookUp), 15);
         AddParameter(NukudeFace::LookDown, pM.GetMorphWeightReference(NukudeFace::LookDown), 15);
         AddParameter(NukudeFace::HeartEye, pM.GetMorphWeightReference(NukudeFace::HeartEye), 20, IEasyEaseAnimator::InterpolationMethod::Cosine);
+        AddParameter(NukudeFace::BedroomEye, pM.GetMorphWeightReference(NukudeFace::BedroomEye), 20, IEasyEaseAnimator::InterpolationMethod::Cosine);
 
         AddParameter(NukudeFace::HideBlush, pM.GetMorphWeightReference(NukudeFace::HideBlush), 15, IEasyEaseAnimator::InterpolationMethod::Cosine, true);
 
@@ -88,6 +92,20 @@ private:
         AddParameterFrame(NukudeFace::HideBlush, 0.0f);
     }
 
+    void Bedroom(){
+        //Half-lidded eye (designed with tools/facesim, `python design.py bedroom`). A blink stacked on the
+        //lowered lid would push the lid through the lower contour, so blinking stays parked like Heart.
+        DisableBlinking();
+
+        AddParameterFrame(NukudeFace::BedroomEye, 1.0f);
+    }
+
+    void BedroomBlush(){
+        //The stock blush sits clear of the lowered lid (rows 12-16 under the eye), so no HeartBlush-style slide is needed.
+        Bedroom();
+        AddParameterFrame(NukudeFace::HideBlush, 0.0f);
+    }
+
     void SpectrumAnalyzerCallback() override {
         AddMaterialFrame(Color::CHORIZONTALRAINBOW, 0.8f);
     }
@@ -101,7 +119,7 @@ private:
     }
 
 public:
-    ProtogenHUB75Project() : ProtogenProject(&cameras, &controller, 2, Vector2D(), Vector2D(192.0f, 94.0f), 22, 23, 11){
+    ProtogenHUB75Project() : ProtogenProject(&cameras, &controller, 2, Vector2D(), Vector2D(192.0f, 94.0f), 22, 23, faceCycleCount){
         scene.AddObject(pM.GetObject());
         scene.AddObject(deltaDisplayBackground.GetObject());
 
@@ -153,27 +171,32 @@ public:
     }
 
     void SelectFace(uint8_t code) {
-        EnableBlinking();//Heart() turns this back off for itself
+        EnableBlinking();//Heart() and Bedroom() turn this back off for themselves
 
-        bool heartFace = code == 6 || code == 7;
+        bool heartFace = code == 1 || code == 2;
 
-        if (IsBooped() && !heartFace && code != 8) {
+        if (IsBooped() && !heartFace && code != 5) {//5 = audio-reactive gradient, which has no face to replace
             Surprised();
             return;
         }
 
         switch(code) {
-            case 0: Default();  break;
-            case 1: Angry();    break;
-            case 2: Doubt();    break;
-            case 3: Frown();    break;
-            case 4: LookUp();   break;
-            case 5: Sad();      break;
-            case 6: Heart();        break;
-            case 7: HeartBlush();   break;
-            case 8: AudioReactiveGradientFace();    break;
-            case 9: OscilloscopeFace();             break;
-            default: SpectrumAnalyzerFace();        break;
+            //In the short-press cycle
+            case 0: Default();      break;
+            case 1: Heart();        break;
+            case 2: HeartBlush();   break;
+            case 3: Bedroom();      break;
+            case 4: BedroomBlush(); break;
+            case 5: AudioReactiveGradientFace();    break;
+            case 6: OscilloscopeFace();             break;
+            case 7: SpectrumAnalyzerFace();         break;
+            //Kept but out of the cycle (see faceCycleCount)
+            case 8: Angry();    break;
+            case 9: Doubt();    break;
+            case 10: Frown();   break;
+            case 11: LookUp();  break;
+            case 12: Sad();     break;
+            default: Default(); break;
         }
 
         if (IsBooped() && heartFace) AddMaterialFrame(Color::CRAINBOW);//Booped hearts stay hearts
